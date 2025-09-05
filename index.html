@@ -1,23 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Civic Project</title>
-    
+    <title>Municipality Civilian Reporting Portal</title>
     <link rel="stylesheet" href="style.css">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 <body>
 
-    <h1>Civic Issue Reporting</h1>
+    <header class="navbar">
+        <div class="nav-brand">Municipality Civilian Reporting Portal</div>
+        <nav>
+            <a href="#" class="nav-link hidden" id="show-report">Report a Problem</a>
+            <a href="#" class="nav-link hidden" id="show-previous">Raised Issue Status</a>
+            <a href="#" class="nav-link hidden" id="show-dashboard">Admin Dashboard</a>
+            <a href="#" class="nav-link hidden" id="show-logout">Log Out</a>
+            <a href="#" class="nav-link" id="show-login-link">Log In</a>
+        </nav>
+    </header>
 
-    <div class="parent-container">
-    <div class="box">Box 1</div>
-    <div class="box">Box 2</div>
-    </div>
+    <main class="main-container">
 
+        <section id="login-section" class="content-section active">
+            <div class="form-container login-container">
+                <h2>Log In</h2>
+                <div class="user-type-toggle">
+                    <button class="toggle-btn active" id="user-login-btn">User</button>
+                    <button class="toggle-btn" id="admin-login-btn">Admin</button>
+                </div>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-username">Username</label>
+                        <input type="text" id="login-username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-login">Log In</button>
+                </form>
+            </div>
+        </section>
 
+        <section id="report-section" class="content-section">
+            <div class="form-container report-container">
+                <h2>Report a Problem</h2>
+                <form id="report-form">
+                    <div class="form-group">
+                        <label for="problem-type">Type of Problem</label>
+                        <select id="problem-type" name="problem-type">
+                            <option value="">-- Choose a category --</option>
+                            <option value="Pothole">Pothole</option>
+                            <option value="Streetlight">Streetlight Out</option>
+                            <option value="Blocked Drain">Blocked Drain</option>
+                            <option value="Missing Signage">Missing Signage</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <div id="map-canvas"></div>
+                        <input type="hidden" id="latitude" name="latitude">
+                        <input type="hidden" id="longitude" name="longitude">
+                    </div>
+                    <div class="form-group">
+                        <label for="problem-location">Location Details (e.g., street name, landmark)</label>
+                        <input type="text" id="problem-location" name="problem-location" placeholder="e.g., Main St, near City Hall" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="problem-photo-video">Upload Photo or Video (optional)</label>
+                        <input type="file" id="problem-photo-video" name="problem-photo-video" accept="image/*,video/*">
+                    </div>
+                    <div class="form-group">
+                        <label for="problem-description">Description</label>
+                        <textarea id="problem-description" name="problem-description" rows="5" placeholder="Please provide details about the issue."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-submit">Submit Report</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="previous-issues-section" class="content-section">
+            <div class="previous-issues-container">
+                <h2>Previous Issues</h2>
+                <div id="issues-list">
+                    </div>
+            </div>
+        </section>
+
+        <section id="dashboard-section" class="content-section">
+            <div class="dashboard-container">
+                <h2>Admin Dashboard</h2>
+                <table class="issues-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Issue Type</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboard-issues-list">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+    
     <script src="script.js"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBA6RsArEAG7Yv5kpfo3WHwxburodDYCI8&callback=initMap"></script>
 </body>
+
 </html>
+
+
