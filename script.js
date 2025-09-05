@@ -6,37 +6,35 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // --- END: SUPABASE SETUP ---
 
-// Global variables for the map
+
+// Global variables for the map (if you are using the map feature)
 let map;
 let marker;
 
 // Initialize the Google Maps map
 function initMap() {
     const defaultLocation = { lat: 26.8467, lng: 75.8083 }; // Center map on Jaipur, India
-    
     map = new google.maps.Map(document.getElementById("map-canvas"), {
         center: defaultLocation,
         zoom: 12,
     });
-    
     marker = new google.maps.Marker({
         position: defaultLocation,
         map: map,
         draggable: true,
         title: "Drag me to the problem location"
     });
-
-    // Update the hidden input fields with the initial coordinates
+    // Update hidden inputs with initial coordinates
     document.getElementById('latitude').value = defaultLocation.lat;
     document.getElementById('longitude').value = defaultLocation.lng;
-
-    // Listen for marker drag events to update the coordinates
+    // Update coordinates when marker is dragged
     marker.addListener('dragend', () => {
         const newPosition = marker.getPosition();
         document.getElementById('latitude').value = newPosition.lat();
         document.getElementById('longitude').value = newPosition.lng();
     });
 }
+
 
 document.addEventListener('DOMContentLoaded', () => {
     // Get all elements
@@ -61,12 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Helper function to update navigation links based on user role
     const updateNavLinks = () => {
-        // Hide all links initially
         navLinks.forEach(link => {
             link.classList.add('hidden');
         });
-
-        // Show links based on user role
         if (currentUserRole === 'user') {
             document.getElementById('show-report').classList.remove('hidden');
             document.getElementById('show-previous').classList.remove('hidden');
@@ -75,13 +70,13 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('show-dashboard').classList.remove('hidden');
             document.getElementById('show-logout').classList.remove('hidden');
         } else {
-            // Not logged in
             document.getElementById('show-login-link').classList.remove('hidden');
         }
     };
 
     // Helper function to fetch and render public issues
     const fetchAndRenderIssues = async () => {
+        issuesListContainer.innerHTML = '<h3>Loading issues...</h3>';
         const { data: issues, error } = await supabaseClient
             .from('issues')
             .select('*')
@@ -89,19 +84,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (error) {
             console.error('Error fetching issues:', error);
+            issuesListContainer.innerHTML = '<p>Sorry, could not load the issues right now.</p>';
+            return;
+        }
+        
+        if (issues.length === 0) {
+            issuesListContainer.innerHTML = '<p>No issues have been reported yet. Be the first!</p>';
             return;
         }
 
-        issuesListContainer.innerHTML = ''; // Clear previous content
+        issuesListContainer.innerHTML = '';
         issues.forEach(issue => {
             const statusClass = `status-${issue.status.toLowerCase().replace(' ', '-')}`;
+            // ** FIXED: Added the status div and media_url back in **
             const issueCardHTML = `
                 <div class="issue-card">
                     <div class="issue-details">
                         <h3>${issue.problem_type} on ${issue.location}</h3>
                         <p>Reported: ${new Date(issue.created_at).toLocaleDateString()}</p>
                         <p>Description: ${issue.description}</p>
-                        ${issue.photo_url ? `<img src="${issue.photo_url}" alt="Issue Photo" style="max-width:100%; margin-top:10px;">` : ''}
+                        ${issue.media_url ? `<img src="${issue.media_url}" alt="Issue Media" style="max-width:100%; margin-top:10px;">` : ''}
                     </div>
                     <div class="issue-status ${statusClass}">${issue.status}</div>
                 </div>
@@ -122,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        dashboardIssuesListContainer.innerHTML = ''; // Clear previous content
+        dashboardIssuesListContainer.innerHTML = '';
         issues.forEach(issue => {
             const statusClass = `status-${issue.status.toLowerCase().replace(' ', '-')}`;
             const rowHTML = `
@@ -146,9 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateNavLinks();
 
     // Event listeners for navigation
-    document.getElementById('show-report').addEventListener('click', () => {
-        showSection('report-section');
-    });
+    document.getElementById('show-report').addEventListener('click', () => showSection('report-section'));
     document.getElementById('show-previous').addEventListener('click', () => {
         fetchAndRenderIssues();
         showSection('previous-issues-section');
@@ -157,9 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchAndRenderDashboard();
         showSection('dashboard-section');
     });
-    document.getElementById('show-login-link').addEventListener('click', () => {
-        showSection('login-section');
-    });
+    document.getElementById('show-login-link').addEventListener('click', () => showSection('login-section'));
     
     // Event listeners for login toggle buttons
     userLoginBtn.addEventListener('click', () => {
@@ -186,7 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
             currentUserRole = 'user';
             updateNavLinks();
             showSection('report-section');
-            fetchAndRenderIssues();
         } else if (!isUserLogin && username === 'admin' && password === 'admin123') {
             currentUserRole = 'admin';
             updateNavLinks();
@@ -216,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const { data: uploadData, error: uploadError } = await supabaseClient
                 .storage
-                .from('photos') // We can use the same bucket, even for videos
+                .from('photos')
                 .upload(fileName, mediaFile);
 
             if (uploadError) {
@@ -236,8 +233,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     problem_type: problemType,
                     location: locationDetails,
                     description: description,
-                    latitude: latitude,
-                    longitude: longitude,
+                    latitude: parseFloat(latitude), // Ensure these are numbers
+                    longitude: parseFloat(longitude), // Ensure these are numbers
                     media_url: mediaUrl,
                     status: 'Pending'
                 }
@@ -259,22 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showSection('login-section');
     });
 
-    // Add event listeners for the dynamic dashboard buttons
-    dashboardIssuesListContainer.addEventListener('click', (event) => {
-        if (event.target.classList.contains('view-btn')) {
-            const issueId = event.target.dataset.issueId;
-            // Placeholder for 'View' functionality
-            alert(`Viewing issue ID: ${issueId}`);
-        } else if (event.target.classList.contains('edit-btn')) {
-            const issueId = event.target.dataset.issueId;
-            // Placeholder for 'Edit' functionality
-            const newStatus = prompt('Enter new status (Pending, In Progress, Solved):');
-            if (newStatus) {
-                updateIssueStatus(issueId, newStatus);
-            }
-        }
-    });
-
     // Function to update an issue's status in Supabase
     const updateIssueStatus = async (id, newStatus) => {
         const { error } = await supabaseClient
@@ -287,8 +268,23 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Failed to update status.');
         } else {
             alert('Status updated successfully!');
-            fetchAndRenderDashboard(); // Refresh the dashboard
-            fetchAndRenderIssues(); // Refresh the public list
+            fetchAndRenderDashboard();
         }
     };
+    
+    // Add event listeners for the dynamic dashboard buttons
+    dashboardIssuesListContainer.addEventListener('click', (event) => {
+        if (event.target.classList.contains('view-btn')) {
+            const issueId = event.target.dataset.issueId;
+            alert(`Viewing issue ID: ${issueId}`);
+        } else if (event.target.classList.contains('edit-btn')) {
+            const issueId = event.target.dataset.issueId;
+            const newStatus = prompt('Enter new status (Pending, In Progress, Solved):');
+            if (newStatus && ['Pending', 'In Progress', 'Solved'].includes(newStatus)) {
+                updateIssueStatus(issueId, newStatus);
+            } else if (newStatus !== null) {
+                alert('Invalid status. Please use Pending, In Progress, or Solved.');
+            }
+        }
+    });
 });
