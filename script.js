@@ -166,11 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.reset();
     });
 
-    adminLoginBtn.addEventListener('click', () => {
-        adminLoginBtn.classList.add('active');
-        userLoginBtn.classList.remove('active');
-        loginForm.reset();
-    });
 
     // Login Form Submission
     loginForm.addEventListener('submit', (event) => {
