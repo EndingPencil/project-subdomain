@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.nav-link');
     const sections = document.querySelectorAll('.content-section');
     const userLoginBtn = document.getElementById('user-login-btn');
-    const adminLoginBtn = document.getElementById('admin-login-btn');
     const loginForm = document.getElementById('login-form');
     const reportForm = document.getElementById('report-form');
     const issuesListContainer = document.getElementById('issues-list');
@@ -179,11 +178,6 @@ document.addEventListener('DOMContentLoaded', () => {
             currentUserRole = 'user';
             updateNavLinks();
             showSection('report-section');
-        } else if (!isUserLogin && username === 'admin' && password === 'admin123') {
-            currentUserRole = 'admin';
-            updateNavLinks();
-            showSection('dashboard-section');
-            fetchAndRenderDashboard();
         } else {
             alert('Invalid username or password.');
         }
