@@ -1,17 +1,21 @@
 // --- START: SUPABASE SETUP ---
-const SUPABASE_URL = 'https://zwuarlfxdruwwdceirjt.supabase.co'; // Replace with your URL
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3dWFybGZ4ZHJ1d3dkY2Vpcmp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNzYwMDQsImV4cCI6MjA3MjY1MjAwNH0.OtVcgZ-mDvLpP8hSu5Go9A-ZyhOqkdoMANwvN97CpXg'; // Replace with your anon key
+const SUPABASE_URL = 'https://zwuarlfxdruwwdceirjt.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp3dWFybGZ4ZHJ1d3dkY2Vpcmp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwNzYwMDQsImV4cCI6MjA3MjY1MjAwNH0.OtVcgZ-mDvLpP8hSu5Go9A-ZyhOqkdoMANwvN97CpXg';
 
-// Create the Supabase client connection
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // --- END: SUPABASE SETUP ---
 
 
-// Global variables for the map (if you are using the map feature)
+// --- GLOBAL SCOPE FOR GOOGLE MAPS ---
+// These variables and the initMap function must be in the global scope
+// so the Google Maps script can access them.
 let map;
 let marker;
 
-// Initialize the Google Maps map
+/**
+ * Initializes the Google Maps map. This function is called by the Google Maps script
+ * once it has finished loading, because of the `&callback=initMap` in the script URL.
+ */
 function initMap() {
     const defaultLocation = { lat: 26.8467, lng: 75.8083 }; // Center map on Jaipur, India
     map = new google.maps.Map(document.getElementById("map-canvas"), {
@@ -24,10 +28,10 @@ function initMap() {
         draggable: true,
         title: "Drag me to the problem location"
     });
-    // Update hidden inputs with initial coordinates
+    // Update hidden form inputs with the initial coordinates
     document.getElementById('latitude').value = defaultLocation.lat;
     document.getElementById('longitude').value = defaultLocation.lng;
-    // Update coordinates when marker is dragged
+    // Add a listener to update coordinates whenever the marker is dragged
     marker.addListener('dragend', () => {
         const newPosition = marker.getPosition();
         document.getElementById('latitude').value = newPosition.lat();
@@ -36,8 +40,10 @@ function initMap() {
 }
 
 
+// --- RUNS AFTER THE HTML DOCUMENT IS FULLY LOADED ---
+// This ensures that all HTML elements are available before we try to add event listeners to them.
 document.addEventListener('DOMContentLoaded', () => {
-    // Get all elements
+    // Get all interactive elements from the page
     const navLinks = document.querySelectorAll('.nav-link');
     const sections = document.querySelectorAll('.content-section');
     const userLoginBtn = document.getElementById('user-login-btn');
@@ -47,9 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const issuesListContainer = document.getElementById('issues-list');
     const dashboardIssuesListContainer = document.getElementById('dashboard-issues-list');
 
-    let currentUserRole = null; // 'user', 'admin', or null
+    let currentUserRole = null; // Can be 'user', 'admin', or null
 
-    // Helper function to show a specific section
+    // --- HELPER FUNCTIONS ---
+
+    // Shows a specific content section and hides the others
     const showSection = (sectionId) => {
         sections.forEach(section => {
             section.classList.remove('active');
@@ -57,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById(sectionId).classList.add('active');
     };
 
-    // Helper function to update navigation links based on user role
+    // Updates the navigation bar links based on whether a user is logged in and their role
     const updateNavLinks = () => {
         navLinks.forEach(link => {
             link.classList.add('hidden');
@@ -74,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Helper function to fetch and render public issues
+    // Fetches and displays all issues for the public "Previous Issues" page
     const fetchAndRenderIssues = async () => {
         issuesListContainer.innerHTML = '<h3>Loading issues...</h3>';
         const { data: issues, error } = await supabaseClient
@@ -96,14 +104,13 @@ document.addEventListener('DOMContentLoaded', () => {
         issuesListContainer.innerHTML = '';
         issues.forEach(issue => {
             const statusClass = `status-${issue.status.toLowerCase().replace(' ', '-')}`;
-            // ** FIXED: Added the status div and media_url back in **
             const issueCardHTML = `
                 <div class="issue-card">
                     <div class="issue-details">
-                        <h3>${issue.problem_type} on ${issue.location}</h3>
+                        <h3>${issue.problem_type} at ${issue.location}</h3>
                         <p>Reported: ${new Date(issue.created_at).toLocaleDateString()}</p>
                         <p>Description: ${issue.description}</p>
-                        ${issue.media_url ? `<img src="${issue.media_url}" alt="Issue Media" style="max-width:100%; margin-top:10px;">` : ''}
+                        ${issue.media_url ? `<img src="${issue.media_url}" alt="Issue Media" style="max-width:100%; margin-top:10px; border-radius: 5px;">` : ''}
                     </div>
                     <div class="issue-status ${statusClass}">${issue.status}</div>
                 </div>
@@ -112,8 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Helper function to fetch and render admin dashboard
+    // Fetches and displays all issues in a table for the admin dashboard
     const fetchAndRenderDashboard = async () => {
+        dashboardIssuesListContainer.innerHTML = '<tr><td colspan="5">Loading issues...</td></tr>';
         const { data: issues, error } = await supabaseClient
             .from('issues')
             .select('*')
@@ -121,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (error) {
             console.error('Error fetching issues for dashboard:', error);
+            dashboardIssuesListContainer.innerHTML = '<tr><td colspan="5">Could not load issues.</td></tr>';
             return;
         }
 
@@ -135,19 +144,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td><span class="${statusClass}">${issue.status}</span></td>
                     <td>
                         <button class="btn-action view-btn" data-issue-id="${issue.id}">View</button>
-                        <button class="btn-action edit-btn" data-issue-id="${issue.id}">Edit</button>
+                        <button class="btn-action edit-btn" data-issue-id="${issue.id}">Edit Status</button>
                     </td>
                 </tr>
             `;
             dashboardIssuesListContainer.innerHTML += rowHTML;
         });
     };
+    
+    // Updates an issue's status in the database
+    const updateIssueStatus = async (id, newStatus) => {
+        const { error } = await supabaseClient
+            .from('issues')
+            .update({ status: newStatus })
+            .eq('id', id);
 
-    // Initial setup
+        if (error) {
+            console.error('Error updating status:', error);
+            alert('Failed to update status.');
+        } else {
+            alert('Status updated successfully!');
+            fetchAndRenderDashboard(); // Refresh the dashboard to show the change
+        }
+    };
+    
+    // --- INITIAL PAGE SETUP ---
     showSection('login-section');
     updateNavLinks();
 
-    // Event listeners for navigation
+    // --- EVENT LISTENERS ---
+
+    // Navigation link clicks
     document.getElementById('show-report').addEventListener('click', () => showSection('report-section'));
     document.getElementById('show-previous').addEventListener('click', () => {
         fetchAndRenderIssues();
@@ -158,8 +185,14 @@ document.addEventListener('DOMContentLoaded', () => {
         showSection('dashboard-section');
     });
     document.getElementById('show-login-link').addEventListener('click', () => showSection('login-section'));
+    document.getElementById('show-logout').addEventListener('click', () => {
+        currentUserRole = null;
+        updateNavLinks();
+        showSection('login-section');
+        loginForm.reset();
+    });
     
-    // Event listeners for login toggle buttons
+    // Login form user/admin toggle
     userLoginBtn.addEventListener('click', () => {
         userLoginBtn.classList.add('active');
         adminLoginBtn.classList.remove('active');
@@ -183,20 +216,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isUserLogin && username === 'user' && password === 'user123') {
             currentUserRole = 'user';
             updateNavLinks();
-            showSection('report-section');
+            showSection('report-section'); // Go to report page after user login
         } else if (!isUserLogin && username === 'admin' && password === 'admin123') {
             currentUserRole = 'admin';
             updateNavLinks();
+            fetchAndRenderDashboard(); // Fetch data and then show dashboard
             showSection('dashboard-section');
-            fetchAndRenderDashboard();
         } else {
             alert('Invalid username or password.');
         }
+        loginForm.reset();
     });
 
     // Report Form Submission
     reportForm.addEventListener('submit', async (event) => {
         event.preventDefault();
+
+        const submitButton = event.target.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting...';
 
         const problemType = document.getElementById('problem-type').value;
         const locationDetails = document.getElementById('problem-location').value;
@@ -207,25 +245,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let mediaUrl = null;
 
+        // Step 1: Upload the file if it exists
         if (mediaFile) {
             const fileExtension = mediaFile.name.split('.').pop();
-            const fileName = `media/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
+            const fileName = `public/${Date.now()}.${fileExtension}`;
 
-            const { data: uploadData, error: uploadError } = await supabaseClient
+            const { error: uploadError } = await supabaseClient
                 .storage
-                .from('photos')
+                .from('report-images') // Make sure this is your bucket name
                 .upload(fileName, mediaFile);
 
             if (uploadError) {
                 console.error('Error uploading media:', uploadError);
                 alert('There was an error uploading your file. Please try again.');
+                submitButton.disabled = false;
+                submitButton.textContent = 'Submit Report';
                 return;
             }
             
-            const { data: { publicUrl } } = supabaseClient.storage.from('photos').getPublicUrl(fileName);
-            mediaUrl = publicUrl;
+            // Step 2: Get the public URL of the uploaded file
+            const { data } = supabaseClient.storage.from('report-images').getPublicUrl(fileName);
+            mediaUrl = data.publicUrl;
         }
 
+        // Step 3: Insert the report details into the database
         const { error: insertError } = await supabaseClient
             .from('issues')
             .insert([
@@ -233,10 +276,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     problem_type: problemType,
                     location: locationDetails,
                     description: description,
-                    latitude: parseFloat(latitude), // Ensure these are numbers
-                    longitude: parseFloat(longitude), // Ensure these are numbers
+                    latitude: parseFloat(latitude),
+                    longitude: parseFloat(longitude),
                     media_url: mediaUrl,
-                    status: 'Pending'
+                    status: 'Pending' // Default status
                 }
             ]);
 
@@ -246,45 +289,31 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             alert('Report submitted successfully! Thank you for your help.');
             reportForm.reset();
+            // Optional: After submitting, switch to the 'previous issues' view
+            fetchAndRenderIssues();
+            showSection('previous-issues-section');
         }
+        
+        submitButton.disabled = false;
+        submitButton.textContent = 'Submit Report';
     });
 
-    // Logout Functionality
-    document.getElementById('show-logout').addEventListener('click', () => {
-        currentUserRole = null;
-        updateNavLinks();
-        showSection('login-section');
-    });
-
-    // Function to update an issue's status in Supabase
-    const updateIssueStatus = async (id, newStatus) => {
-        const { error } = await supabaseClient
-            .from('issues')
-            .update({ status: newStatus })
-            .eq('id', id);
-
-        if (error) {
-            console.error('Error updating status:', error);
-            alert('Failed to update status.');
-        } else {
-            alert('Status updated successfully!');
-            fetchAndRenderDashboard();
-        }
-    };
-    
-    // Add event listeners for the dynamic dashboard buttons
+    // Event delegation for dynamically created buttons in the admin dashboard
     dashboardIssuesListContainer.addEventListener('click', (event) => {
-        if (event.target.classList.contains('view-btn')) {
-            const issueId = event.target.dataset.issueId;
-            alert(`Viewing issue ID: ${issueId}`);
-        } else if (event.target.classList.contains('edit-btn')) {
-            const issueId = event.target.dataset.issueId;
+        const target = event.target;
+        if (target.classList.contains('view-btn')) {
+            const issueId = target.dataset.issueId;
+            alert(`Viewing issue ID: ${issueId}. (This feature can be expanded to show a modal with full details).`);
+        } else if (target.classList.contains('edit-btn')) {
+            const issueId = target.dataset.issueId;
             const newStatus = prompt('Enter new status (Pending, In Progress, Solved):');
+            // Check if the user entered a valid status
             if (newStatus && ['Pending', 'In Progress', 'Solved'].includes(newStatus)) {
                 updateIssueStatus(issueId, newStatus);
-            } else if (newStatus !== null) {
+            } else if (newStatus !== null) { // User entered something invalid
                 alert('Invalid status. Please use Pending, In Progress, or Solved.');
             }
+            // If newStatus is null, the user clicked "Cancel", so do nothing.
         }
     });
 });

@@ -193,3 +193,11 @@ input:focus, select:focus, textarea:focus {
 .status-pending {
     background-color: #ffc107;
 }
+
+#map-canvas {
+    height: 400px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
