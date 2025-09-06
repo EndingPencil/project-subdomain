@@ -15,6 +15,7 @@
         <nav>
             <a href="#" class="nav-link hidden" id="show-report">Report a Problem</a>
             <a href="#" class="nav-link hidden" id="show-previous">Raised Issue Status</a>
+            <a href="#" class="nav-link hidden" id="show-dashboard">Admin Dashboard</a>
             <a href="#" class="nav-link hidden" id="show-logout">Log Out</a>
             <a href="#" class="nav-link" id="show-login-link">Log In</a>
         </nav>
@@ -27,6 +28,7 @@
                 <h2>Log In</h2>
                 <div class="user-type-toggle">
                     <button class="toggle-btn active" id="user-login-btn">User</button>
+                    <button class="toggle-btn" id="admin-login-btn">Admin</button>
                 </div>
                 <form id="login-form">
                     <div class="form-group">
@@ -37,6 +39,7 @@
                         <label for="login-password">Password</label>
                         <input type="password" id="login-password" name="password" required>
                     </div>
+                    <button type="submit" class="btn btn-login">Log In</button>
                 </form>
             </div>
         </section>
@@ -113,7 +116,5 @@
 </body>
 
 </html>
-
-
 
 
