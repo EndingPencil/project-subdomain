@@ -59,6 +59,11 @@ body {
     background-color: #55799b;
 }
 
+/* --- THIS IS THE ADDED RULE --- */
+.hidden {
+    display: none;
+}
+
 /* --- Form Containers --- */
 .form-container {
     width: 100%;
